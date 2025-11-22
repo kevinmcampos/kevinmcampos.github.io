@@ -1,10 +1,14 @@
 [versions]
 androidx-lifecycle = "2.9.1"
-composeMultiplatform = "1.8.2"
+composeMultiplatform = "1.9.0-rc01"
 junit = "4.13.2"
 kotlin = "2.2.0"
+material3Adaptive = "1.1.0"
 
 [libraries]
+androidx-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "material3Adaptive" }
+androidx-material3-adaptive-layout = { module = "androidx.compose.material3.adaptive:adaptive-layout", version.ref = "material3Adaptive" }
+androidx-material3-adaptive-navigation = { module = "androidx.compose.material3.adaptive:adaptive-navigation", version.ref = "material3Adaptive" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }

@@ -5,144 +5,40 @@ package br.app.kevin.portfolio.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowSizeClass
 
 /**
- * A simplified master-detail layout that adapts based on screen size.
- * On large screens, shows both master and detail panes side by side.
- * On small screens, shows only one pane at a time with navigation.
- */
-@Composable
-fun MasterDetailScaffold(
-    selectedItem: Any?,
-    onItemSelected: (Any?) -> Unit,
-    masterPane: @Composable () -> Unit,
-    detailPane: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    masterPaneWidth: Dp = 600.dp,
-    showDetailPane: Boolean = selectedItem != null,
-    emptyDetailPane: @Composable () -> Unit = {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Select an item to view details")
-        }
-    }
-) {
-    val isLargeScreen = true // configuration.screenWidthDp.dp >= 600.dp
-
-    Row(modifier = modifier.fillMaxSize()) {
-        if (isLargeScreen) {
-            // Large screen: Show both panes
-            Surface(
-                modifier = Modifier.width(masterPaneWidth),
-                tonalElevation = 1.dp
-            ) {
-                masterPane()
-            }
-
-            HorizontalDivider()
-
-            Surface(
-                modifier = Modifier.weight(1f)
-            ) {
-                if (showDetailPane) {
-                    detailPane()
-                } else {
-                    emptyDetailPane()
-                }
-            }
-        } else {
-            // Small screen: Show one pane at a time
-            if (!showDetailPane) {
-                masterPane()
-            } else {
-                detailPane()
-            }
-        }
-    }
-}
-
-/**
- * State holder for master-detail navigation
- */
-@Stable
-class MasterDetailState<T>(
-    initialSelectedItem: T? = null
-) {
-    var selectedItem by mutableStateOf(initialSelectedItem)
-        private set
-
-    val isDetailShown: Boolean
-        get() = selectedItem != null
-
-    val isLargeScreen = mutableStateOf(false)
-
-    fun selectItem(item: T?) {
-        selectedItem = item
-    }
-
-    fun clearSelection() {
-        selectedItem = null
-    }
-
-    fun navigateBack(): Boolean {
-        return if (selectedItem != null && !isLargeScreen.value) {
-            clearSelection()
-            true
-        } else {
-            false
-        }
-    }
-}
-
-/**
- * Remember a master-detail state
- */
-@Composable
-fun <T> rememberMasterDetailState(
-    initialSelectedItem: T? = null
-): MasterDetailState<T> {
-    return remember { MasterDetailState(initialSelectedItem) }
-}
-
-/**
- * Enhanced version with navigation integration and back handling
+ * Master-detail layout. Wide screens (>= 600dp) show list + detail side by side; narrow ones
+ * show one at a time with a back action. Caller owns [selectedItem].
  */
 @Composable
 fun <T> AdaptiveMasterDetailScaffold(
@@ -162,87 +58,72 @@ fun <T> AdaptiveMasterDetailScaffold(
         isLargeScreen: Boolean
     ) -> Unit,
     modifier: Modifier = Modifier,
-    masterPaneWidth: Dp = 320.dp,
-    emptyDetailPane: @Composable () -> Unit = {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Default.List,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "Select an item to view details",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
-    }
+    masterPaneWidth: Dp = 340.dp,
+    emptyDetailPane: @Composable () -> Unit = { EmptyDetailPane() },
 ) {
-    val windowClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isLargeScreen =
-        windowClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
-    val hasSelectedItem = selectedItem != null
-
-    // Handle back navigation for small screens
-    LaunchedEffect(selectedItem, isLargeScreen) {
-        // Update state based on screen size changes
-    }
-
-    Row(modifier = modifier.fillMaxSize()) {
-        if (isLargeScreen || !hasSelectedItem) {
-            // Show master pane
-            Surface(
-                modifier = if (isLargeScreen) {
-                    Modifier.width(masterPaneWidth)
-                } else {
-                    Modifier.fillMaxSize()
-                },
-                tonalElevation = if (isLargeScreen) 1.dp else 0.dp
-            ) {
-                masterPane(
-                    items,
-                    selectedItem,
-                    onItemSelected,
-                    isLargeScreen
-                )
-            }
-        }
+    // Measure the space we actually have (the phone screen), not the browser window, so the layout
+    // is correct inside the device frame. >= 600dp gets the side-by-side two-pane treatment.
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val isLargeScreen = maxWidth >= 600.dp
 
         if (isLargeScreen) {
-            VerticalDivider()
-        }
+            Row(Modifier.fillMaxSize()) {
+                Surface(
+                    modifier = Modifier.width(masterPaneWidth),
+                    tonalElevation = 1.dp
+                ) {
+                    masterPane(items, selectedItem, onItemSelected, true)
+                }
 
-        if (isLargeScreen || hasSelectedItem) {
-            // Show detail pane
-            Surface(
-                modifier = if (isLargeScreen) {
-                    Modifier.weight(1f)
-                } else {
-                    Modifier.fillMaxSize()
+                VerticalDivider()
+
+                Surface(modifier = Modifier.weight(1f)) {
+                    // local val so the null-check smart-casts
+                    val current = selectedItem
+                    if (current != null) {
+                        detailPane(current, onBackPressed, true)
+                    } else {
+                        emptyDetailPane()
+                    }
                 }
-            ) {
-                if (hasSelectedItem) {
-                    detailPane(
-                        selectedItem,
-                        onBackPressed,
-                        isLargeScreen
-                    )
-                } else if (isLargeScreen) {
-                    emptyDetailPane()
-                }
+            }
+        } else {
+            val current = selectedItem
+            if (current == null) {
+                masterPane(items, selectedItem, onItemSelected, false)
+            } else {
+                detailPane(current, onBackPressed, false)
             }
         }
     }
 }
 
-// Helper composables for common UI patterns
+@Composable
+private fun EmptyDetailPane() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Outlined.WorkOutline,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer16()
+            Text(
+                "Select a project to view details",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Spacer16() = Box(Modifier.height(16.dp))
+
 @Composable
 fun MasterDetailTopBar(
     title: String,
@@ -276,20 +157,21 @@ fun MasterListItem(
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
+    val containerColor =
+        if (selected) MaterialTheme.colorScheme.secondaryContainer
+        else MaterialTheme.colorScheme.surface
+
     ListItem(
-        headlineContent = { Text(title) },
+        headlineContent = {
+            Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
+        },
         supportingContent = subtitle?.let { { Text(it) } },
         leadingContent = leadingIcon,
         trailingContent = trailingIcon,
+        colors = ListItemDefaults.colors(containerColor = containerColor),
         modifier = modifier
-            .clickable { onClick() }
-            .let {
-                if (selected) {
-                    it.background(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                } else it
-            }
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
     )
 }

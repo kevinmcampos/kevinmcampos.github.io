@@ -3,6 +3,7 @@ package br.app.kevin.portfolio.ui.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.hoverable
@@ -32,7 +33,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.DrawableResource
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
 // Google brand colors
@@ -50,52 +50,49 @@ private fun googleOneSweepBrush(): Brush = Brush.sweepGradient(
     1.0f to GoogleBlue,  // loop back cleanly
 )
 
-@OptIn(ExperimentalResourceApi::class)
+/**
+ * Avatar with a progress ring that fills while you hover. Hold it long enough and the ring
+ * completes, the photo swaps to [imageHover] and stays. Let go early and it rewinds, keeping
+ * the first photo. Next hover resets and starts over.
+ */
 @Composable
-fun ProfileHoverAvatarGoogleOnePersistent(
+fun ProfileAvatar(
     imageNormal: DrawableResource,
     imageHover: DrawableResource,
     size: Dp = 112.dp,
     ringWidth: Dp = 6.dp,
     backgroundRingWidth: Dp = 3.dp,
     startAngle: Float = -90f,
-    fillDurationMs: Int = 2200,   // ← slower fill; tweak as you like
-    rewindOnExitIfNotComplete: Boolean = true
+    fillDurationMs: Int = 2200,
+    rewindOnExitIfNotComplete: Boolean = true,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val hovered by interaction.collectIsHoveredAsState()
+
     val ringBrush = remember { googleOneSweepBrush() }
     val ringBg = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
 
-    // Fine-grained progress control
+    // completed stays true until the next hover
     val progress = remember { Animatable(0f) }
     var completed by remember { mutableStateOf(false) }
 
-    // Keep a small hover pulse only while hovering (not while "completed & idle")
-    val pulse = if (hovered) 1.03f else 1f
-
     LaunchedEffect(hovered) {
         if (hovered) {
-            // If user hovers again after completion: reset and start a new cycle
+            // hovering again after it finished: reset and refill
             if (completed) {
                 completed = false
                 progress.snapTo(0f)
             }
-            // Fill to 100%
-            progress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = fillDurationMs, easing = LinearEasing)
-            )
-            // Mark as completed (stick at 1f until next hover)
-            completed = true
-        } else {
-            // On exit: if not completed yet, optionally rewind to 0
-            if (!completed && rewindOnExitIfNotComplete) {
-                progress.animateTo(0f, animationSpec = tween(300, easing = LinearEasing))
-            }
-            // If completed, do nothing → stays at 1f
+            progress.animateTo(1f, tween(durationMillis = fillDurationMs, easing = LinearEasing))
+            completed = true // done: swap and keep
+        } else if (!completed && rewindOnExitIfNotComplete) {
+            // let go before it finished: rewind. already done: leave it filled.
+            progress.animateTo(0f, tween(300, easing = LinearEasing))
         }
     }
+
+    // tiny pulse while it's filling
+    val pulse by animateFloatAsState(if (hovered && !completed) 1.03f else 1f, tween(200))
 
     Box(
         modifier = Modifier
@@ -103,36 +100,36 @@ fun ProfileHoverAvatarGoogleOnePersistent(
             .hoverable(interaction)
             .clip(CircleShape)
             .drawBehind {
-                val stroke = Stroke(width = ringWidth.toPx(), cap = StrokeCap.Round)
-                val backgroundStoke = Stroke(width = backgroundRingWidth.toPx(), cap = StrokeCap.Round)
-                // Background ring
                 drawArc(
-                    color = ringBg, startAngle = 0f, sweepAngle = 360f,
-                    useCenter = false, style = backgroundStoke
+                    color = ringBg,
+                    startAngle = 0f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    style = Stroke(width = backgroundRingWidth.toPx(), cap = StrokeCap.Round),
                 )
-                // Progress ring
                 drawArc(
                     brush = ringBrush,
                     startAngle = startAngle,
                     sweepAngle = 360f * progress.value.coerceIn(0f, 1f),
                     useCenter = false,
-                    style = stroke
+                    style = Stroke(width = ringWidth.toPx(), cap = StrokeCap.Round),
                 )
             }
             .padding(ringWidth),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
-        Crossfade(targetState = completed, label = "imgSwap") { isHovered ->
+        // swap on completed, not hover, so it sticks
+        Crossfade(targetState = completed, label = "avatarImage") { showHoverImage ->
             Image(
-                painter = painterResource(if (isHovered) imageHover else imageNormal),
-                contentDescription = "Profile",
+                painter = painterResource(if (showHoverImage) imageHover else imageNormal),
+                contentDescription = "Kevin's profile photo",
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
                     .graphicsLayer {
                         scaleX = pulse
                         scaleY = pulse
-                    }
+                    },
             )
         }
     }

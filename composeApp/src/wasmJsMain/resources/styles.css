@@ -5,3 +5,78 @@ html, body {
     padding: 0;
     overflow: hidden;
 }
+
+/* the compose canvas lives here, full viewport */
+#app {
+    width: 100%;
+    height: 100%;
+}
+
+/* crawlable text for SEO/ATS, hidden visually. A bit of black-hat, maybe Google will not like it? */
+#seo-content {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* loading screen, until the app boots */
+#loading {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: #faf8fd;
+    color: #1c1b1f;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    transition: opacity 0.35s ease;
+}
+
+#loading.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 4px solid rgba(103, 80, 164, 0.20);
+    border-top-color: #6750A4;
+    animation: loader-spin 0.9s linear infinite;
+}
+
+.loader-name {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.loader-sub {
+    font-size: 13px;
+    opacity: 0.6;
+}
+
+@keyframes loader-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-color-scheme: dark) {
+    #loading {
+        background: #141218;
+        color: #e6e0e9;
+    }
+    .loader-ring {
+        border-color: rgba(208, 188, 255, 0.20);
+        border-top-color: #D0BCFF;
+    }
+}

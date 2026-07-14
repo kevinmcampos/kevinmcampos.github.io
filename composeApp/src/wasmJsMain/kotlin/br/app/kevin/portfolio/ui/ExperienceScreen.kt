@@ -5,70 +5,26 @@ package br.app.kevin.portfolio.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.app.kevin.portfolio.ui.components.AdaptiveMasterDetailScaffold
 import br.app.kevin.portfolio.ui.components.MasterDetailTopBar
 import br.app.kevin.portfolio.ui.components.MasterListItem
-import kevin_portfolio_wasm_kmp.composeapp.generated.resources.Res
-import kevin_portfolio_wasm_kmp.composeapp.generated.resources.avatar
-import kevin_portfolio_wasm_kmp.composeapp.generated.resources.avatar2
-import org.jetbrains.compose.resources.DrawableResource
-import org.jetbrains.compose.resources.painterResource
-import androidx.compose.foundation.Image
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-
-data class ProjectItem(
-    val id: String,
-    val title: String,
-    val role: String,
-    val description: String,
-    val technologies: List<String>,
-    val period: String,
-    val imageRes: DrawableResource? = null
-)
+import br.app.kevin.portfolio.ui.components.ScreenshotCarousel
+import br.app.kevin.portfolio.ui.components.openUrl
 
 @Composable
 fun ExperienceScreen() {
-    val projects = remember {
-        listOf(
-            ProjectItem(
-                id = "1",
-                title = "E-Commerce Android App",
-                role = "Lead Android Engineer",
-                description = "Led the development of a feature-rich e-commerce application with over 1M downloads. Implemented a modular architecture using MVVM and Clean Architecture principles. Integrated payment gateways, push notifications, and real-time order tracking.",
-                technologies = listOf("Kotlin", "Jetpack Compose", "Coroutines", "Hilt", "Room"),
-                period = "2021 - Present",
-                imageRes = Res.drawable.avatar // Placeholder
-            ),
-            ProjectItem(
-                id = "2",
-                title = "Banking SDK",
-                role = "Senior Android Developer",
-                description = "Developed a secure banking SDK used by multiple financial institutions. Focused on security, performance, and API design. Implemented biometric authentication and encrypted data storage.",
-                technologies = listOf("Kotlin", "Security Crypto", "Retrofit", "OkHttp", "JUnit"),
-                period = "2019 - 2021",
-                imageRes = Res.drawable.avatar2 // Placeholder
-            ),
-            ProjectItem(
-                id = "3",
-                title = "Social Media Platform",
-                role = "Android Developer",
-                description = "Contributed to a social media app focused on photo sharing. Optimized image loading and caching strategies. Implemented custom UI components and animations.",
-                technologies = listOf("Java", "Kotlin", "Glide", "RxJava", "Dagger 2"),
-                period = "2017 - 2019",
-                imageRes = null
-            ),
-        )
-    }
-    
+    val projects = remember { experiences }
+
     var selectedProject by remember { mutableStateOf<ProjectItem?>(null) }
 
     AdaptiveMasterDetailScaffold(
@@ -102,18 +58,11 @@ private fun ProjectList(
     isLargeScreen: Boolean
 ) {
     Column {
-        MasterDetailTopBar(
-            title = "Projects",
-            actions = {
-                IconButton(onClick = { /* Filter */ }) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filter")
-                }
-            }
-        )
-        
+        MasterDetailTopBar(title = "Experience")
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(projects, key = { it.id }) { project ->
@@ -154,26 +103,23 @@ private fun ProjectDetail(
     onBackClick: () -> Unit,
     isLargeScreen: Boolean
 ) {
-    Column {
+    Column(Modifier.fillMaxSize()) {
         MasterDetailTopBar(
             title = project.title,
             showBackButton = !isLargeScreen,
             onBackClick = onBackClick,
-            actions = {
-                IconButton(onClick = { /* Share */ }) {
-                    Icon(Icons.Default.Share, contentDescription = "Share")
-                }
-            }
         )
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
             Text(
                 text = project.role,
                 style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
@@ -181,14 +127,25 @@ private fun ProjectDetail(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
+            project.link?.let { url ->
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(onClick = { openUrl(url) }) {
+                    Icon(Icons.AutoMirrored.Filled.OpenInNew, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Open project")
+                }
+            }
+
+            if (project.screenshots.isNotEmpty()) {
+                Spacer(Modifier.height(24.dp))
+                SectionTitle("Screenshots")
+                Spacer(Modifier.height(12.dp))
+                ScreenshotCarousel(shots = project.screenshots)
+            }
+
             Spacer(Modifier.height(24.dp))
-            
-            Text(
-                text = "About",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SectionTitle("About")
             Spacer(Modifier.height(8.dp))
             Text(
                 text = project.description,
@@ -196,34 +153,10 @@ private fun ProjectDetail(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (project.imageRes != null) {
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "Screenshots",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(12.dp))
-                Image(
-                    painter = painterResource(project.imageRes),
-                    contentDescription = "Project Screenshot",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
             Spacer(Modifier.height(24.dp))
-
-            Text(
-                text = "Technologies",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SectionTitle("Technologies")
             Spacer(Modifier.height(12.dp))
-            
+
             @OptIn(ExperimentalLayoutApi::class)
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -236,6 +169,18 @@ private fun ProjectDetail(
                     )
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
 }

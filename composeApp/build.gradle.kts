@@ -30,6 +30,13 @@ kotlin {
                     }
                 }
             }
+            // wasmJsTest runs in a headless browser via Karma. The no-sandbox launcher
+            // (see composeApp/karma.config.d/karma.conf.js) keeps it working on CI runners too.
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
         }
         binaries.executable()
     }

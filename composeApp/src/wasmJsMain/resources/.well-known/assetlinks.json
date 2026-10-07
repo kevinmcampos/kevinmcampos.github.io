@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.kevincampos.passkeylab",
+      "sha256_cert_fingerprints": [
+        "B3:78:25:04:13:4D:93:EE:D8:34:C9:A2:53:85:6B:8D:B0:20:2A:65:F0:EE:99:2C:12:FE:8F:9D:E0:CD:2F:0C"
+      ]
+    }
+  }
+]
